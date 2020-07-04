@@ -66,7 +66,7 @@ function Base.show(io::IO, m::Method, modulecolor = :yellow)
         end
     end
     printstyled(io, ")", color = :light_black)
-    Base.show_method_params(io, tv)
+    show_method_params(io, tv)
     println(io)
     printstyled(io, " " * "@ ", color = :light_black)
     # if !isempty(m.module)
@@ -90,6 +90,26 @@ function Base.show(io::IO, m::Method, modulecolor = :yellow)
     # bright black (90) and underlined (4)
     print(io, "\033[90;4m$(pathparts[end] * ":" * string(line))\033[0m")
 end
+
+function show_method_params(io::IO, tv)
+    if !isempty(tv)
+        printstyled(io, " where "; color = :light_black)
+        if length(tv) == 1
+            printstyled(io, tv[1]; color = :light_black)
+        else
+            printstyled(io, "{"; color = :light_black)
+            for i = 1:length(tv)
+                if i > 1
+                    printstyled(io, ", "; color = :light_black)
+                end
+                x = tv[i]
+                printstyled(io, x; color = :light_black)
+                io = IOContext(io, :unionall_env => x)
+            end
+            printstyled(io, "}"; color = :light_black)
+        end
+    end
+end # function show_method_params
 
 getmodule(m::Method) = m.module
 getmodule(list::Base.MethodList) = map(getmodule, list)
