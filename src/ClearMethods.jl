@@ -1,5 +1,6 @@
 module ClearMethods
 
+const MODULECOLORS = [:light_blue, :light_yellow, :light_red, :light_green, :light_magenta, :light_cyan, :blue, :yellow, :red, :green, :magenta, :cyan]
 const EXPAND_BASE_PATHS = Ref(true)
 const CONTRACT_USER_DIR = Ref(true)
 
@@ -32,7 +33,7 @@ function replaceuserpath(str)
     replace(str1, lowercasefirst(homedir()) => "~")
 end
 
-function Base.show(io::IO, m::Method)
+function Base.show(io::IO, m::Method, modulecolor = :yellow)
     tv, decls, file, line = Base.arg_decl_parts(m)
     sig = Base.unwrap_unionall(m.sig)
     if sig === Tuple
@@ -72,7 +73,7 @@ function Base.show(io::IO, m::Method)
     #     printstyled(io, m.module, color = :yellow)
     #     print(io, " ")
     # end
-    printstyled(io, m.module, color = :yellow)
+    printstyled(io, m.module, color = modulecolor)
     print(io, " ")
     if line > 0
         file, line = Base.updated_methodloc(m)
@@ -88,6 +89,55 @@ function Base.show(io::IO, m::Method)
     # filename, separator, line
     # bright black (90) and underlined (4)
     print(io, "\033[90;4m$(pathparts[end] * ":" * string(line))\033[0m")
+end
+
+getmodule(m::Method) = m.module
+getmodule(list::Base.MethodList) = map(getmodule, list)
+
+function Base.show_method_table(io::IO, ms::Base.MethodList, max::Int=-1, header::Bool=true)
+    mt = ms.mt
+    name = mt.name
+    hasname = isdefined(mt.module, name) &&
+              typeof(getfield(mt.module, name)) <: Function
+    if header
+        Base.show_method_list_header(io, ms, str -> "\""*str*"\"")
+    end
+    n = rest = 0
+    local last
+    LAST_SHOWN_LINE_INFOS = get(io, :LAST_SHOWN_LINE_INFOS, Tuple{String,Int}[])
+
+    modules = getmodule(ms)
+
+    uniquemodules = setdiff(unique(modules), [""])
+    modulecolors = Dict(u => c for (u, c) in
+        Iterators.zip(uniquemodules, Iterators.cycle(MODULECOLORS)))
+
+    resize!(LAST_SHOWN_LINE_INFOS, 0)
+    for meth in ms
+        if max==-1 || n<max
+            n += 1
+            println(io)
+            print(io, "[$n] ")
+            modulecolor = get(modulecolors, meth.module, :default)
+            show(io, meth, modulecolor)
+            file, line = Base.updated_methodloc(meth)
+            push!(LAST_SHOWN_LINE_INFOS, (string(file), line))
+        else
+            rest += 1
+            last = meth
+        end
+    end
+    if rest > 0
+        println(io)
+        if rest == 1
+            show(io, last)
+        else
+            print(io, "... $rest methods not shown")
+            if hasname
+                print(io, " (use methods($name) to see them all)")
+            end
+        end
+    end
 end
 
 end
