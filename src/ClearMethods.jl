@@ -1,6 +1,19 @@
 module ClearMethods
 
-const MODULECOLORS = [:light_blue, :light_yellow, :light_red, :light_green, :light_magenta, :light_cyan, :blue, :yellow, :red, :green, :magenta, :cyan]
+const MODULECOLORS = [
+    :light_blue,
+    :light_yellow,
+    :light_red,
+    :light_green,
+    :light_magenta,
+    :light_cyan,
+    :blue,
+    :yellow,
+    :red,
+    :green,
+    :magenta,
+    :cyan,
+]
 const EXPAND_BASE_PATHS = Ref(true)
 const CONTRACT_USER_DIR = Ref(true)
 
@@ -83,7 +96,11 @@ function Base.show(io::IO, m::Method, modulecolor = :yellow)
     pathparts = splitpath(file)
     folderparts = pathparts[1:end-1]
     if !isempty(folderparts)
-        printstyled(io, joinpath(folderparts...) * (Sys.iswindows() ? "\\" : "/"), color = :light_black)
+        printstyled(
+            io,
+            joinpath(folderparts...) * (Sys.iswindows() ? "\\" : "/"),
+            color = :light_black,
+        )
     end
 
     # filename, separator, line
@@ -114,13 +131,17 @@ end # function show_method_params
 getmodule(m::Method) = m.module
 getmodule(list::Base.MethodList) = map(getmodule, list)
 
-function Base.show_method_table(io::IO, ms::Base.MethodList, max::Int=-1, header::Bool=true)
+function Base.show_method_table(
+    io::IO,
+    ms::Base.MethodList,
+    max::Int = -1,
+    header::Bool = true,
+)
     mt = ms.mt
     name = mt.name
-    hasname = isdefined(mt.module, name) &&
-              typeof(getfield(mt.module, name)) <: Function
+    hasname = isdefined(mt.module, name) && typeof(getfield(mt.module, name)) <: Function
     if header
-        Base.show_method_list_header(io, ms, str -> "\""*str*"\"")
+        Base.show_method_list_header(io, ms, str -> "\"" * str * "\"")
     end
     n = rest = 0
     local last
@@ -129,12 +150,13 @@ function Base.show_method_table(io::IO, ms::Base.MethodList, max::Int=-1, header
     modules = getmodule(ms)
 
     uniquemodules = setdiff(unique(modules), [""])
-    modulecolors = Dict(u => c for (u, c) in
-        Iterators.zip(uniquemodules, Iterators.cycle(MODULECOLORS)))
+    modulecolors = Dict(
+        u => c for (u, c) in Iterators.zip(uniquemodules, Iterators.cycle(MODULECOLORS))
+    )
 
     resize!(LAST_SHOWN_LINE_INFOS, 0)
     for meth in ms
-        if max==-1 || n<max
+        if max == -1 || n < max
             n += 1
             println(io)
             print(io, "[$n] ")
